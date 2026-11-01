@@ -83,6 +83,11 @@ size_mib = 192
 loader = "firmware"
 title = "UniXNU"
 panic_screen = true
+
+# Entry-probe diagnostic (this fork, 2026-11-01): the first device boot of the Build #1 image reached the
+# magenta bar (kernel entry, MMU still off) and stalled there. With a 6 second reset delay after the MMU is
+# on, one boot answers whether the MMU enable completes: a reset ~6 s after the magenta bar means it did.
+entry_probe_reset_delay = 6
 # -v, serial=3, debug=0x14e and kt_fixed_zones=120 as on UniXNU-sheng and the other SM8550 ports. fuxi-touch=3: touch
 # rails, QUP clocks, pins, GENI SPI, controller reset and chip id; fuxi-touch-panic=1 then panics with the probe's four
 # diagnostic rows as the message, so the result can be read from the panic screen.
