@@ -89,11 +89,14 @@ panic_screen = false
 # exactly this). Restore panic_screen = true when the reset bisection ends.
 
 # Entry-probe diagnostics (this fork, 2026-11-01): the Build #1 image stalled at the magenta bar. Build #3's
-# stage-3 reset fired ~6 s after the magenta bar on the owner's unit, so the MMU enable completes and the
-# stall is later, inside arm_init before bsd_init. Stage 4 moves the same timed reset to just after a chosen
-# call in _arm_init, bisecting early init one call per build; this build asks about _arm_vm_init.
+# stage-3 reset fired ~6 s after the magenta bar on the owner's unit, so the MMU enable completes; Build #5
+# put the stage-4 reset after _arm_vm_init and it never fired (magenta held 30+ s), so the stall is inside
+# _arm_vm_init. Host analysis of the Build #5 kernel.macho: the "Unsupported memory configuration" panic
+# needs ~56 GiB and is ruled out; most helpers are inlined, but _arm_vm_prot_init is a real call about
+# halfway through _arm_vm_init. This build asks whether the kernel gets past it.
 entry_probe_reset_delay = 6
-entry_probe_reset_after = "_arm_vm_init"
+entry_probe_reset_in = "_arm_vm_init"
+entry_probe_reset_after = "_arm_vm_prot_init"
 # -v, serial=3, debug=0x14e and kt_fixed_zones=120 as on UniXNU-sheng and the other SM8550 ports. fuxi-touch=3: touch
 # rails, QUP clocks, pins, GENI SPI, controller reset and chip id; fuxi-touch-panic=1 then panics with the probe's four
 # diagnostic rows as the message, so the result can be read from the panic screen.
