@@ -82,14 +82,21 @@ volume = "FUXIESP"
 size_mib = 192
 loader = "firmware"
 title = "UniXNU"
-panic_screen = true
-# Restored in Build #10: the entry-probe reset bisection is over. The Build #1 magenta stall was never in
-# early-init code - the kernel panicked in _arm_init's CPU-topology parse on the payload ADT's cluster-type
-# stamps (this fork's kernel has MAX_CPU_CLUSTER_PHY_ID = 0), and the panic self-masked through a
-# TPIDR_EL1=0 percpu access. Build #8 removed the stamps from dts/fuxi.dts and its stage-4 reset fired on
-# the device (~6 s after magenta), confirming early init now passes. With no reset cave in use the panic
-# screen fits again (Build #2's 79-byte overflow only happened with the stage-3 reset combined), so the
-# boot can proceed to bsd_init and the touch probe, whose result is read from this panic screen.
+panic_screen = false
+# Off again for the Build #11 diagnostic (the panic screen cannot combine with a reset cave, Build #2).
+# Build #10 (panic screen on, no probe) froze on the device at the three bars for 60+ s: no reset, and the
+# touch probe's designed panic screen never appeared. The QEMU rig ran the same artifact much further -
+# _pmap_bootstrap returned and boot reached IOKit service matching - but stopped at an AppleARMCPU
+# device-tree assert that is very likely virt-only, so the device stall sits somewhere between IOKit
+# matching and the probe readout and the rig cannot see past its own assert. Build #11 therefore asks the
+# device one bit: does the kernel reach the _bsd_init call in _kernel_bootstrap_thread (the only direct
+# call site, at _kernel_bootstrap_thread+0x3e0 in the Build #10 kernel)? The stage-4 cave runs BEFORE
+# that call: 6 s after the call site is reached it issues the PSCI reset. A reset clears everything up to
+# bsd_init (arm_init, IOKit matching and configuration); no reset in 60 s puts the stall before it.
+entry_probe_reset_delay = 6
+entry_probe_reset_after = "_bsd_init"
+entry_probe_reset_in = "_kernel_bootstrap_thread"
+entry_probe_reset_before = true
 # -v, serial=3, debug=0x14e and kt_fixed_zones=120 as on UniXNU-sheng and the other SM8550 ports. fuxi-touch=3: touch
 # rails, QUP clocks, pins, GENI SPI, controller reset and chip id; fuxi-touch-panic=1 then panics with the probe's four
 # diagnostic rows as the message, so the result can be read from the panic screen.
