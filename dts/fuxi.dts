@@ -29,15 +29,12 @@
     };
 };
 
-// 核心布局与 sheng 相同：cpu0-2 = A510（E 簇），cpu3-7 = A715/A710/X3（P 簇）
-&cpu0 { unixnu,cluster-type = "E"; };
-&cpu1 { unixnu,cluster-type = "E"; };
-&cpu2 { unixnu,cluster-type = "E"; };
-&cpu3 { unixnu,cluster-type = "P"; };
-&cpu4 { unixnu,cluster-type = "P"; };
-&cpu5 { unixnu,cluster-type = "P"; };
-&cpu6 { unixnu,cluster-type = "P"; };
-&cpu7 { unixnu,cluster-type = "P"; };
+// 不写 unixnu,cluster-type：本 fork 的内核没有簇支持（MAX_CPU_CLUSTER_PHY_ID = 0），
+// ADT 里任何 cluster-type 都会让 ml_parse_cpu_topology 在 _arm_init 阶段断言失败
+// （machine_routines.c:1099），且该 panic 会被自身的 percpu 访问掩盖成无声卡死。
+// 能启动的 fuxi 移植同样不在 ADT 中写 cluster-type（全核默认 SMP）。
+// 2026-11-02 在 QEMU rig 上以 Build #7 内核验证：去掉该属性后内核越过拓扑断言、
+// 进入 _arm_vm_init 并执行到 stage-4 探针的 PSCI reset。
 &ufs { status = "okay"; };
 &ufsphy { status = "okay"; };
 &gpu { status = "okay"; };
