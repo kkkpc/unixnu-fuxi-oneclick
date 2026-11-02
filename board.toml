@@ -82,21 +82,14 @@ volume = "FUXIESP"
 size_mib = 192
 loader = "firmware"
 title = "UniXNU"
-panic_screen = false
-# Temporary while the entry-probe reset diagnostics run (since Build #3): patch-xnu-entry-probe.py cannot
-# combine the panic screen with the stage-3 reset on this kernel - the panic cave shifts one 0x60 cave later
-# and the 0xA1F-byte panic screen overflows the remaining 0x9D0 bytes by 79 (Build #2 payload step failed on
-# exactly this). Restore panic_screen = true when the reset bisection ends.
-
-# Entry-probe diagnostics (this fork, 2026-11-01): the Build #1 image stalled at the magenta bar. Build #3's
-# stage-3 reset fired ~6 s after the magenta bar, so the MMU enable completes; Build #5 (reset after
-# _arm_vm_init) and Build #6 (reset after _arm_vm_prot_init) never reset on the device, narrowing the stall
-# to the first half of _arm_vm_init: physmap setup, the inlined initial page tables, the 24-call segment
-# walk/assert block and the boot-arg parse. In the compiled kernel _PE_parse_boot_argn sits right after the
-# last segment call, so this build asks whether the kernel gets past the segment block and the parse.
-entry_probe_reset_delay = 6
-entry_probe_reset_in = "_arm_vm_init"
-entry_probe_reset_after = "_PE_parse_boot_argn"
+panic_screen = true
+# Restored in Build #10: the entry-probe reset bisection is over. The Build #1 magenta stall was never in
+# early-init code - the kernel panicked in _arm_init's CPU-topology parse on the payload ADT's cluster-type
+# stamps (this fork's kernel has MAX_CPU_CLUSTER_PHY_ID = 0), and the panic self-masked through a
+# TPIDR_EL1=0 percpu access. Build #8 removed the stamps from dts/fuxi.dts and its stage-4 reset fired on
+# the device (~6 s after magenta), confirming early init now passes. With no reset cave in use the panic
+# screen fits again (Build #2's 79-byte overflow only happened with the stage-3 reset combined), so the
+# boot can proceed to bsd_init and the touch probe, whose result is read from this panic screen.
 # -v, serial=3, debug=0x14e and kt_fixed_zones=120 as on UniXNU-sheng and the other SM8550 ports. fuxi-touch=3: touch
 # rails, QUP clocks, pins, GENI SPI, controller reset and chip id; fuxi-touch-panic=1 then panics with the probe's four
 # diagnostic rows as the message, so the result can be read from the panic screen.
